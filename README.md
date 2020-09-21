@@ -1,7 +1,7 @@
 # bhr-docker
 BHR installation guide using Docker and docker-compose.
 
-##Prerequisites
+## Prerequisites
 
 Ensure you have mkdocs installed. This can be done with:
 
