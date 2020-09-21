@@ -1,59 +1,5 @@
 #Installing BHR
 
-These installation instructions relies heavily on both Docker and Docker-compose.  Some introductory guides
-to get you familiar with these technologies are linked below:
-
-[Docker Getting Started](https://docs.docker.com/get-started/)
-
-[Docker Compose Overview](https://docs.docker.com/compose/overview/)
-
-[Docker Compose Overview](https://docs.docker.com/compose/overview/)
-
-The default deployment model uses Docker and Docker Compose to deploy
-containers for the project's tools, and so, require the following:
-
-* Docker >= 1.13.1
-* Docker Compose >= 1.15.0
-
-Please note that you will have a more stable experience by installing docker-compose and docker from your 
-distributions repos, rather than downloading docker directly from Docker. Direct downloads from Docker *do* tend to 
-have more features, but those features often come at the price of unresolved bugs. 
-
-__Note:__ On Linux, you will need some escalated privileges to run docker.
-This may include having rights to run `$ sudo docker-compose`, or your user being a part of the
-`docker` group.
-
-### Ubuntu Installation
-
-```
-$ sudo apt install docker docker-compose python3 python3-pip
-$ sudo systemctl enable docker
-$ sudo systemctl start docker
-```
-
-
-### RHEL/CentOS Installation
-
-Ensure that you have the EPEL repository available.  Instructions on how to
-enable this can be found [here](https://fedoraproject.org/wiki/EPEL)
-You may need to specify whether you want python3.4 or python3.6. Where possible, use python3.6 or newer.
-```
-$ sudo yum install docker docker-compose python3 python3-pip
-$ sudo systemctl enable docker
-$ sudo systemctl start docker
-```
-
-
-### OSX Installation
-
-Ensure that Homebrew is installed.  Homebrew installation information can be
-found [here](https://brew.sh/)
-
-```
-$ brew install docker docker-compose
-```
-
-
 ## Setting up your BHR environment
 
 First, create a directory to hold the BHR repositories:
@@ -177,7 +123,7 @@ You should see the following page if everything is running as expected.
 
 ![BHR Token 1](img/bhr_token_1.png)
 
-Navigate to http://your.domain.here.com:8000/admin, and login with the credentials you set in [Starting bhr-site](install.md#starting-bhr-site).
+Navigate to http://your.domain.here.com:8000/admin, and login with the credentials you set in [Starting bhr-site](bhr_install.md#starting-bhr-site).
 
 ![BHR Token 2](img/bhr_token_2.png)
 
@@ -259,7 +205,7 @@ As well as setting the proper AS values in the following lines:
 
 For testing purposes, you can leave these values as is.
 
-Next, we will want to modify the `bhr.env` file with the API token created in [Configuring bhr-site](install.md#configuring-bhr-site).
+Next, we will want to modify the `bhr.env` file with the API token created in [Configuring bhr-site](bhr_install.md#configuring-bhr-site).
 
 Modify the `BHR_TOKEN` environment variable to contain this API token.
 

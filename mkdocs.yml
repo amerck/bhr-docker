@@ -5,4 +5,5 @@ markdown_extensions:
   - admonition
 nav:
   - 'BHR': index.md
-  - 'Installing BHR': install.md
+  - 'Installing Docker': docker_install.md
+  - 'Installing BHR': bhr_install.md

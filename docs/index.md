@@ -5,4 +5,5 @@ BHR ([https://github.com/ncsa/bhr-site](https://github.com/ncsa/bhr-site)) is a 
 This documentation provides examples of installing and using BHR in Docker.
 
 ## Contents
-* [Installing BHR](install.md)
+* [Installing Docker](docker_install.md)
+* [Installing BHR](bhr_install.md)
