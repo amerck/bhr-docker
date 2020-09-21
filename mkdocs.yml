@@ -1,0 +1,8 @@
+site_name: BHR Docker Guide
+theme: readthedocs
+docs_dir: docs
+markdown_extensions:
+  - admonition
+nav:
+  - 'BHR': index.md
+  - 'Installing BHR': install.md
