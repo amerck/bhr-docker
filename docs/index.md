@@ -7,3 +7,4 @@ This documentation provides examples of installing and using BHR in Docker.
 ## Contents
 * [Installing Docker](docker_install.md)
 * [Installing BHR](bhr_install.md)
+* [BHR REST API Documentation](rest_api.md)

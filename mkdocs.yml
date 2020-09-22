@@ -7,3 +7,4 @@ nav:
   - 'BHR': index.md
   - 'Installing Docker': docker_install.md
   - 'Installing BHR': bhr_install.md
+  - 'Rest API Specification': rest_api.md

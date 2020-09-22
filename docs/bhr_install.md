@@ -30,6 +30,14 @@ Copy the following file to `docker-compose.yml`, using your preferred text edito
             - bhr.env
           volumes:
             - ./postgres-data:/var/lib/postgresql/data
+        web:
+          image: nginx
+          ports:
+            - 80:80
+            - 443:443
+          volumes:
+            - ./nginx/certs:/etc/nginx/certs:z
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
         bhr-site:
           build:
             context: ./bhr-site
@@ -37,8 +45,6 @@ Copy the following file to `docker-compose.yml`, using your preferred text edito
           command: python manage.py runserver 0.0.0.0:8000
           volumes:
             - ./bhr-site:/app
-          ports:
-            - "8000:8000"
           depends_on:
             - db
           env_file:
@@ -82,15 +88,73 @@ After running `docker-compose ps`, you should see the following output:
     -----------------------------------------------------------
     bhr_db_1   docker-entrypoint.sh postgres   Up      5432/tcp
     
+## Configuring nginx
+
+In order to enable TLS for bhr-site, we will need to configure an Nginx container to proxy connections to bhr-site.
+
+Begin by creating directories for storing your SSL certificates and Nginx config.
+
+    $ mkdir -p nginx/certs
+    
+Copy your certificate (.crt) and key (.key) files to `nginx/certs/`.
+
+If you wish to create a self-signed certificate for your build, run the following command. 
+Replace "your.domain.here.com" with the hostname of your server.
+
+    $ openssl req -subj /CN=your.domain.here.com -x509 -newkey rsa:4096 -nodes -keyout nginx/certs/bhr.key -out nginx/certs/bhr.crt -days 365
+    
+Next, copy the following file to `nginx/nginx.conf`:
+
+    pid /run/nginx.pid;
+    include /etc/nginx/modules-enabled/*.conf;
+    events {
+            worker_connections 768;
+            # multi_accept on;
+    }
+    http {
+            sendfile on;
+            tcp_nopush on;
+            tcp_nodelay on;
+            keepalive_timeout 65;
+            types_hash_max_size 2048;
+            include /etc/nginx/mime.types;
+            default_type application/octet-stream;
+            ssl_protocols TLSv1.2; # Dropping SSLv3, ref: POODLE
+            ssl_prefer_server_ciphers on;
+            access_log /var/log/nginx/access.log;
+            error_log /var/log/nginx/error.log;
+            gzip on;
+            
+            server {
+                listen 80 default_server;
+                server_name _;
+                return 301 https://$host$request_uri;
+            }
+            
+            server {
+                listen 443 ssl;
+                server_name your.domain.here.com;
+                ssl_certificate /etc/nginx/certs/bhr.crt;
+                ssl_certificate_key /etc/nginx/certs/bhr.key;
+                location / {
+                    proxy_pass http://bhr-site:8000/;
+                    error_log /var/log/front_end_errors.log;
+            }
+        }
+    }
+    
+Make sure to modify the server_name to the name of your server in this file. 
+Also, if you imported your own keys, make sure to change the .crt and .key file names to match your certificate and key files.
+    
 ## Starting bhr-site
 
 Before we start bhr-site, we need to modify the Django settings file to contain our domains.
 
 Open the file `bhr-site/bhr_site/settings.py` and locate the `ALLOWED_HOSTS` variable.
 
-You will need to add the string "bhr-site", as well as any domain name that you will be accessing BHR from.
+You will need to add the string "bhr-site".
 
-    ALLOWED_HOSTS = ['bhr-site', 'your.domain.here.com']
+    ALLOWED_HOSTS = ['bhr-site']
     
 Next, build bhr-site using the following command:
 
@@ -98,32 +162,34 @@ Next, build bhr-site using the following command:
     
 Once the build process finishes, run the following docker-compose commands to configure bhr-site:
 
-    $ docker-compose run --rm web python manage.py migrate
-    $ docker-compose run --rm web python manage.py createsuperuser
-    $ docker-compose run --rm web python manage.py creategroups
+    $ docker-compose run --rm bhr-site python manage.py migrate
+    $ docker-compose run --rm bhr-site python manage.py createsuperuser
+    $ docker-compose run --rm bhr-site python manage.py creategroups
     
 After running the `createsuperuser` command, you will be prompted to configure the default BHR admin account.
 
 Once this is complete, start bhr-site using the following command:
 
-    $ docker-compose up -d bhr-site
+    $ docker-compose up -d web bhr-site
     
 After running `docker-compose ps`, you should see the following output:
 
     $ docker-compose ps
-         Name                   Command               State           Ports         
-    --------------------------------------------------------------------------------
-    bhr_bhr-site_1   python manage.py runserver ...   Up      0.0.0.0:8000->8000/tcp
-    bhr_db_1         docker-entrypoint.sh postgres    Up      5432/tcp            
+         Name                   Command               State                    Ports                  
+    --------------------------------------------------------------------------------------------------
+    bhr_bhr-site_1   python manage.py runserver ...   Up      0.0.0.0:8000->8000/tcp                  
+    bhr_db_1         docker-entrypoint.sh postgres    Up      5432/tcp                                
+    bhr_web_1        /docker-entrypoint.sh ngin ...   Up      0.0.0.0:443->443/tcp, 0.0.0.0:80->80/tcp           
 
 ## Configuring bhr-site
 
-Verify that you can access BHR by browsing to http://your.domain.here.com:8000. 
+Verify that you can access BHR by browsing to https://your.domain.here.com
+
 You should see the following page if everything is running as expected.
 
 ![BHR Token 1](img/bhr_token_1.png)
 
-Navigate to http://your.domain.here.com:8000/admin, and login with the credentials you set in [Starting bhr-site](bhr_install.md#starting-bhr-site).
+Navigate to https://your.domain.here.com/admin, and login with the credentials you set in [Starting bhr-site](bhr_install.md#starting-bhr-site).
 
 ![BHR Token 2](img/bhr_token_2.png)
 
@@ -214,6 +280,10 @@ Modify the `BHR_TOKEN` environment variable to contain this API token.
     BHR_TOKEN=your_api_token
     BHR_IDENT=bhr
     BHR_TEMPLATE=/code/templates/template.mako
+    
+Once these files have been written, build the bhr-exabgp image.
+
+    $ docker-compose build bhr-exabgp
     
 ## Starting bhr-client-exabgp
 
