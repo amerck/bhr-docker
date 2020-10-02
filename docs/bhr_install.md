@@ -38,15 +38,21 @@ Copy the following file to `docker-compose.yml`, using your preferred text edito
           volumes:
             - ./nginx/certs:/etc/nginx/certs:z
             - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+            - ./bhr-site/staticfiles:/static/static
         bhr-site:
           build:
             context: ./bhr-site
             dockerfile: Dockerfile
-          command: python manage.py runserver 0.0.0.0:8000
+          command: gunicorn bhr_site.wsgi --bind=0.0.0.0:8000 --workers=8 --timeout=45 --max-requests=500 --log-file -
           volumes:
             - ./bhr-site:/app
+            - ./settings_local.py:/app/bhr_site/settings_local.py       
+          ports:
+            - "8000:8000"
           depends_on:
             - db
+          environment:
+            - PYTHONPATH=/app/bhr_site
           env_file:
             - bhr.env
         bhr-exabgp:
@@ -126,35 +132,67 @@ Next, copy the following file to `nginx/nginx.conf`:
             gzip on;
             
             server {
-                listen 80 default_server;
-                server_name _;
+                listen 80;
+                server_name localhost;
                 return 301 https://$host$request_uri;
             }
-            
-            server {
+
+           server {
                 listen 443 ssl;
-                server_name your.domain.here.com;
+                server_name localhost;
                 ssl_certificate /etc/nginx/certs/bhr.crt;
                 ssl_certificate_key /etc/nginx/certs/bhr.key;
                 location / {
                     proxy_pass http://bhr-site:8000/;
                     error_log /var/log/front_end_errors.log;
-            }
-        }
+                }
+                location /static/ {
+                    root /static;
+                }
+           }
     }
+
     
 Make sure to modify the server_name to the name of your server in this file. 
 Also, if you imported your own keys, make sure to change the .crt and .key file names to match your certificate and key files.
     
 ## Starting bhr-site
 
-Before we start bhr-site, we need to modify the Django settings file to contain our domains.
+Before we start bhr-site, we need to create a local Django settings file to contain our domains.
 
-Open the file `bhr-site/bhr_site/settings.py` and locate the `ALLOWED_HOSTS` variable.
+Run the following command and copy the output.
 
-You will need to add the string "bhr-site".
+    openssl rand -base64 48
 
-    ALLOWED_HOSTS = ['bhr-site']
+Copy the following file to `settings_local.py` 
+and set the `SECRET_KEY` variable value to the output from the `openssl` command above
+
+    LOCAL_SETTINGS = True  # do not touch
+    from settings import * # do not touch
+    
+    DEBUG = False
+    ALLOWED_HOSTS = ['localhost', 'bhr-site']
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    
+    # openssl rand -base64 48
+    SECRET_KEY = ''
+    
+    STATIC_ROOT="/app/staticfiles"
+    
+    BHR = {
+        'time_multiplier':              2.0,
+        'time_window_factor':           2.0,
+        'minimum_time_window':          43200.0,
+        'penalty_time_multiplier':      2.0,
+        'return_to_base_multiplier':    2.0,
+        'return_to_base_factor':        2.0,
+        'unauthenticated_limited_query':  True,
+        'local_networks':               ['10.0.0.0/8'],
+        'minimum_prefixlen':            23,
+        'minimum_prefixlen_v6':         64,
+    }
+
     
 Next, build bhr-site using the following command:
 
@@ -165,6 +203,7 @@ Once the build process finishes, run the following docker-compose commands to co
     $ docker-compose run --rm bhr-site python manage.py migrate
     $ docker-compose run --rm bhr-site python manage.py createsuperuser
     $ docker-compose run --rm bhr-site python manage.py creategroups
+    $ docker-compose run --rm bhr-site python manage.py collectstatic
     
 After running the `createsuperuser` command, you will be prompted to configure the default BHR admin account.
 
