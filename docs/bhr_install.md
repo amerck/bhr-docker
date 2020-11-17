@@ -79,6 +79,9 @@ Copy the following environment variable to `bhr.env`. We will be modifying this 
     BHR_IDENT=bhr
     BHR_TEMPLATE=/code/templates/template.mako
     
+!!!note
+    Do not modify the `BHR_HOST` variable. This name is used internally by Docker, and changing this can cause BHR to break.
+    
 Change the `POSTGRES_PASSWORD` and `DATABASE_URL` variables to a secure password. This will be the password that is used by PostgreSQL.
 
 ## Starting PostgreSQL
@@ -152,6 +155,8 @@ Next, copy the following file to `nginx/nginx.conf`:
            }
     }
 
+!!!note
+    Do not modify the `proxy_pass` variable. This name is used internally by Docker, and changing this can cause BHR to break.
     
 Make sure to modify the server_name to the name of your server in this file. 
 Also, if you imported your own keys, make sure to change the .crt and .key file names to match your certificate and key files.
@@ -312,6 +317,9 @@ For testing purposes, you can leave these values as is.
 
 Next, we will want to modify the `bhr.env` file with the API token created in [Configuring bhr-site](bhr_install.md#configuring-bhr-site).
 
+!!!note
+    Do not modify the `BHR_HOST` variable. This name is used internally by Docker, and changing this can cause BHR to break.
+    
 Modify the `BHR_TOKEN` environment variable to contain this API token.
 
     # bhr-client-exabgp variables
