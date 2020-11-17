@@ -1,5 +1,11 @@
 #Installing BHR
 
+!!! warning
+    It is highly recommended to test this application within a lab environment prior to injecting routes into a production network, as this could result in unexpected network behavior or outages.
+    
+    We shouldn't have to say this, but...please don't test in production. 🙂
+    
+
 ## Setting up your BHR environment
 
 First, create a directory to hold the BHR repositories:
